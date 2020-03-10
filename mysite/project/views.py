@@ -1,7 +1,11 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, Http404, HttpResponseRedirect
-import pyrebase
 from django.contrib import auth
+
+import pyrebase
+import requests
+import json
+from collections import Counter
 
 config = {
 
@@ -24,8 +28,8 @@ database=firebase.database()
 def default(request):
 	return HttpResponse("Hello, world. You're at the project default.")
 
-def detail(request, searchword):
-	return HttpResponse("You're looking at searchword %s." % searchword)
+def db_test(request, db_test, searchword):
+	return HttpResponse("You're looking at db: %s, and searchword: %s" % (db_test, searchword))
 
 	# try:
 	# 	question = Question.objects.get(pk=question_id)

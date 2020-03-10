@@ -16,7 +16,8 @@ urlpatterns = [
     # path('<int:question_id>/vote/', views.vote, name='vote'),
 
     # ex: /project/sweden/
-    path('<str:searchword>/', views.detail, name='detail'),
+    path('<str:db_test>/', views.db_test, name='db_test'),
 
-
+    #ex: /project/world/sweden
+    path('<str:db_test>/<str:searchword>/', views.db_test, name='searchword'),
 ]
