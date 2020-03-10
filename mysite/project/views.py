@@ -1,4 +1,5 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponse, Http404, HttpResponseRedirect
 import pyrebase
 from django.contrib import auth
 
@@ -19,3 +20,6 @@ authe = firebase.auth()
 database=firebase.database()
 
 # Create your views here.
+
+def default(request):
+	return HttpResponse("Hello, world. You're at the project index.")
