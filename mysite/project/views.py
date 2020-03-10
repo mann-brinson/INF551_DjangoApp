@@ -22,4 +22,16 @@ database=firebase.database()
 # Create your views here.
 
 def default(request):
-	return HttpResponse("Hello, world. You're at the project index.")
+	return HttpResponse("Hello, world. You're at the project default.")
+
+def detail(request, searchword):
+	return HttpResponse("You're looking at searchword %s." % searchword)
+
+	# try:
+	# 	question = Question.objects.get(pk=question_id)
+	# except Question.DoesNotExist:
+	# 	raise Http404("Question does not exist")
+	# return render(request, 'polls/detail.html', {'question': question})
+
+	# question = get_object_or_404(Question, pk=question_id)
+	# return render(request, 'polls/detail.html', {'question': question})
