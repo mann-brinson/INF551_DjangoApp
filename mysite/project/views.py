@@ -98,18 +98,23 @@ def db_test(request, database, searchterm):
 				if len(obs_prim_keys)==1:
 					obs_prim_key=obs_prim_keys[0] 
 					# assign the value of the primary key from the response for the firebase query
-					return HttpResponse("obs_prim_key: %s --- response %s" % (obs_prim_key, response)) #Returns 'code'
+					#return HttpResponse("obs_prim_key: %s --- response %s" % (obs_prim_key, response)) #Returns 'code'
 					#return HttpResponse("test: %s" % response) #Returns index tuple with 'Code'
 
-					# query_val=response[obs_prim_key] #Returns 'swe'
-					# #return HttpResponse("test: %s" % query_val)
+					query_val=response[obs_prim_key] #Returns 'swe'
+					#return HttpResponse("test: %s :: obs_prim_key: %s :: child: %s"% (query_val, obs_prim_key, child))
 
-					# # search firebase for the entry that contains that query value at the right location
-					# firebase_queries = db.child(child).order_by_child(obs_prim_key).equal_to(query_val).get()
+					# search firebase for the entry that contains that query value at the right location
+					#firebase_queries = db.child(child).order_by_child(obs_prim_key).equal_to(query_val).get() #Fix this
+					#test = db.child("country").get()
+					test = requests.get(firebaseurl+'/'+child+'/'+'200'+'.json').json()
+					return HttpResponse("test: %s" % test)
+
+
 					# #return HttpResponse("test: %s" % firebase_queries)
-					# # the queries are returned as pyrebase objects for which you can retrieve keys
+					# the queries are returned as pyrebase objects for which you can retrieve keys
 					# for firebase_query in firebase_queries:
-					# 	# the key then functions as a node in the final retrieval of the original entry in firebase
+					# # 	# the key then functions as a node in the final retrieval of the original entry in firebase
 					# 	firebase_query_id=firebase_query.key()
 					# 	return HttpResponse("test: %s" % firebase_query_id) #Test
 						#firebase_output.append(requests.get(firebaseurl+'/'+child+'/'+firebase_query_id+'.json').json())
