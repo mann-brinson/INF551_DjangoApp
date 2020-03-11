@@ -41,7 +41,7 @@ tables['countrylanguage']=countrylanguage
 world['tables']=tables
 
 # and lastly, add the firebase url
-world['firebaseurl']='https://inf551world.firebaseio.com'
+world['firebaseurl']='https://inf551-world-project.firebaseio.com'
 
 
 ####### second database is the kickstarter database ########
