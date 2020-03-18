@@ -22,21 +22,51 @@ def db_test(request, database, searchterm):
 	    url = db_specs.db_specs[db]['firebaseurl']
 	    return url
 
+	def get_tables(db, db_specs):
+	    tables = list(db_specs.db_specs[db]['tables'].keys())
+	    return tables
+
+	def get_pkeys(db, tables, specs):
+	    p_keys = []
+	    for table in tables:
+	        p_keys.append(db_specs.db_specs[db]['tables'][table]['primarykeys'][0])
+	    return p_keys
+
+	#Initialize db metadata
 	url = get_url(database, db_specs)
+	tables = get_tables(database, db_specs)
+	pkeys = get_pkeys(database, tables, db_specs)
 	# return HttpResponse("Test url: %s" % (url)) #Working
 
 	keywords = searchterm.lower().split() 
-	firebase_output=list()   
+	firebase_output=list() 
+	match_rows = dict()  
 	for word in keywords:
 		try:
 			# retrieve search results from the index (multiple observations for each keyword)
-			responses=requests.get(url+'/index/'+word+'.json').json() 
+			index_matches=requests.get(url+'/index/'+word+'.json').json() 
+			for match in index_matches:
+				match_table=match['table']
+				tableindex=tables.index(match['table'])
+				obs_prim_key=pkeys[tableindex]
 
-		# if there's no node in the firebase index, catch the error
+				if match_table not in match_rows:
+					match_rows[match_table] = []
+
+				match_id=match[obs_prim_key]
+				firebase_queries = fb_settings.db.child(match_table).order_by_child(obs_prim_key).equal_to(match_id).get()
+				for firebase_query in firebase_queries:
+					firebase_query_key=firebase_query.key()
+					path = url+'/'+match_table+'/'+firebase_query_key+'.json'
+					#firebase_output.append(requests.get(path).json())
+					response = requests.get(path).json()
+					match_rows[match_table].append(response)
+
 		except TypeError:
 			print(f'Keyword "{word}" does not exist in database')
-			break #go to the next keyword
-	return HttpResponse("Test response: %s" % (responses)) #Working 
+			continue #go to the next keyword
+
+	return HttpResponse("Test: %s" % (match_rows)) #Working 
 
 
 # def db_test(request, database, searchterm):
