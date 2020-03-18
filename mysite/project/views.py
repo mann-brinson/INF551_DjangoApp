@@ -7,19 +7,8 @@ import requests
 import json
 from collections import Counter
 
-#from . import db_specs
-
-config = {
-	'apiKey': "AIzaSyAle83H9wpH_bVHcDHLX2Hhw1ak_8PYhXg",
-    'authDomain': "inf551-world-project.firebaseapp.com",
-    'databaseURL': "https://inf551-world-project.firebaseio.com",
-    'projectId': "inf551-world-project",
-    'storageBucket': "inf551-world-project.appspot.com",
-    'messagingSenderId': "717516863005",
-    'appId': "1:717516863005:web:7d58f28fbdf2f9d93ab8f4",
-    'serviceAccount': ""
-
-  }
+from . import db_specs
+from . import fb_settings
 
 # Create your views here.
 
@@ -27,7 +16,28 @@ def default(request):
 	return HttpResponse("Hello, world. You're at the project default.")
 
 def db_test(request, database, searchterm):
-	return HttpResponse("You're looking at db: %s, and searchterm: %s" % (database, searchterm))
+	#return HttpResponse("You're looking at db: %s, and searchterm: %s" % (database, searchterm))
+
+	def get_url(db, db_specs):
+	    url = db_specs.db_specs[db]['firebaseurl']
+	    return url
+
+	url = get_url(database, db_specs)
+	# return HttpResponse("Test url: %s" % (url)) #Working
+
+	keywords = searchterm.lower().split() 
+	firebase_output=list()   
+	for word in keywords:
+		try:
+			# retrieve search results from the index (multiple observations for each keyword)
+			responses=requests.get(url+'/index/'+word+'.json').json() 
+
+		# if there's no node in the firebase index, catch the error
+		except TypeError:
+			print(f'Keyword "{word}" does not exist in database')
+			break #go to the next keyword
+	return HttpResponse("Test response: %s" % (responses)) #Working 
+
 
 # def db_test(request, database, searchterm):
 # 	#return HttpResponse("You're looking at db: %s, and searchterm: %s" % (database, searchterm)) #Working
