@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.contrib import auth
 from . import db_specs # database specifications (table names, primary keys etc.)
+from .forms import SearchForm
 
 import pyrebase
 import requests
@@ -10,6 +11,16 @@ import ast # to convert dictionaries as strings back to dictionaries
 import re # regular expressions, to find whole words
 
 # Create your views here.
+
+def selectdb(request):
+    form = SearchForm(request.POST or None)
+    if form.is_valid():
+        form.save()
+        form = SearchForm()
+    context = {
+        'form': form
+    }
+    return render(request, "project/selectdb.html", context)
 
 def default(request):
     return HttpResponse("Hello, world. You're at the project default.")
