@@ -15,9 +15,13 @@ urlpatterns = [
     # ex: /polls/5/vote/
     # path('<int:question_id>/vote/', views.vote, name='vote'),
 
+    path('selectdb/', views.selectdb, name='selectdb'),
+
     # ex: /project/sweden/
     path('<str:database>/', views.db_test, name='database'),
 
     #ex: /project/world/sweden
     path('<str:database>/<str:searchterm>/', views.db_test, name='searchterm'),
+
+
 ]
