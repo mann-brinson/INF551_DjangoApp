@@ -54,13 +54,25 @@ def db_test(request, database, searchterm):
 
     # create a list that holds rows of the tables (as dicts) that match on one or more keywords
     match_rows = list()  
+    # create error catching objects
     keyword_failure=True
     keyword_failure_warning=list()
+    # create object that holds the total size of the requests
+    size_bytes=0
+    size_kb=0
+    size_mb=0
 
     for word in keywords:   
         try:
             # retrieve search results from the firebase index (multiple observations for each keyword)
-            index_matches=requests.get(url+'/index/'+word+'.json').json() 
+            search_response=requests.get(url+'/index/'+word+'.json')
+
+            # add the data communication overhead
+            size_bytes+=len(search_response.content)
+
+            # get search results in json format
+            index_matches=search_response.json() 
+
              # parse the search results
             for match in index_matches:
                 # assign the original table name
@@ -72,15 +84,19 @@ def db_test(request, database, searchterm):
                 # firebase request based on the table, primary key and the value
                 path = f'{url}/{match_table}.json?orderBy="{match_key}"&equalTo="{match_id}"'
 
-                response = requests.get(path)
-                res = json.loads(response.content)
+                table_response = requests.get(path)
+                res = json.loads(table_response.content)
     
                 # add the matched rows to the match_rows list (list of dicts)
                 for val in res.values():
                     match_rows.append(val)
 
+                # if successful
                 keyword_failure=False
-    
+
+                # calculate the overhead for each of the requests
+                size_bytes+=len(table_response.content)
+
         except TypeError:
             # create a warning if some of the keywords were not found (but don't abort)
             keyword_failure_warning.append("Not found in database: "+word)
@@ -90,6 +106,13 @@ def db_test(request, database, searchterm):
             # iterate over other keywords to see if they're valid
             else:
                 continue
+
+    if size_bytes>1000:
+        size_kb=round(size_bytes/1000,1)
+        size_bytes=0
+    if size_bytes>1000000:
+        size_mb=round(size_bytes/1000000,1)
+        size_bytes=0
 
     # if there's a results that got added for multiple keywords, they'll occur twice in the output
     # the following section counts how many of the same results there are, 
@@ -142,4 +165,9 @@ def db_test(request, database, searchterm):
     if len(keyword_failure_warning)>0:
         return HttpResponse("%s %s" % (ordered_output, keyword_failure_warning))
     else:
-        return HttpResponse("%s" % (ordered_output))
+        if size_bytes>0:
+            return HttpResponse("%s Size of search request is %s bytes" % (ordered_output, size_bytes))
+        if size_kb>0:
+            return HttpResponse("%s Size of search request is %s KB" % (ordered_output, size_kb))
+        if size_mb>0:
+            return HttpResponse("%s Size of search request is %s MB" % (ordered_output, size_mb))
