@@ -174,32 +174,48 @@ def db_search(request, database, searchterm):
                         holding_list.append(output)
     # catch error when there is only one keyword, and it's not in the database
     except ValueError:
+        ##### THIS STILL NEEDS TO BE INTEGRATED INTO OUTPUT ###
         return HttpResponse(f'Not found in database: {orig_searchterm_whole}')
 
     # clear out any remaining items in the holding list from the last iteration
     for held_item in holding_list:
         ordered_output.append(ast.literal_eval(held_item))    
 
+    context={'results':ordered_output, 'database': database, 'searchterm': searchterm, 'foreign_keys':fkeys, 'fk_pk':fk_pk}
 
     if len(keyword_failure_warning)>0:
-        return HttpResponse(f'{ordered_output} {keyword_failure_warning}')
+        ##### THIS STILL NEEDS TO BE INTEGRATED INTO OUTPUT ###
+        context.update({'warning': keyword_failure_warning})
     else:
         if size_bytes>0:
-            return render(request, 'project/results.html', {'results':ordered_output, 'database': database, 'searchterm': searchterm, 'foreign_keys':fkeys, 'fk_pk':fk_pk, 'size_bytes':size_bytes})
+            context.update({'size_bytes':size_bytes})           
         if size_kb>0:
-            return render(request, 'project/results.html', {'results':ordered_output, 'database': database, 'searchterm': searchterm, 'foreign_keys':fkeys, 'fk_pk':fk_pk, 'size_kb':size_kb})
+            context.update({'size_kb':size_kb})
         if size_mb>0:
-            return render(request, 'project/results.html', {'results':ordered_output, 'database': database, 'searchterm': searchterm, 'foreign_keys':fkeys, 'fk_pk':fk_pk, 'size_mb':size_mb})
-
+            context.update({'size_mb':size_mb})
+        return render(request, 'project/results.html', context)
 
 
 
 def fk_link(request, database, searchterm, fk_value):
-
+    url = get_url(database)
     fkeys, fk_pk = get_fkeys(database)
+    pkeys=get_pkeys(database)
+    tables=get_tables(database)
+    fkey, match_id=fk_value.split('&')
+    match_key=fk_pk[fkey]
+    match_table=tables[pkeys.index(match_key)]
 
-    fk, value=fk_value.split('&')
+    # firebase request based on the table, primary key and the value
+    path = f'{url}/{match_table}.json?orderBy="{match_key}"&equalTo="{match_id}"'
+    table_response = requests.get(path)
+    res = json.loads(table_response.content)
 
-    context = {'fk': fk_value}
+    # add the matched rows to the match_rows list (list of dicts)
+    match_rows=list()
+    for val in res.values():
+        match_rows.append(val)
+
+    context = {'link': match_rows}
 
     return render(request, 'project/link.html', context)

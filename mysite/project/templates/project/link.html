@@ -1,3 +1,6 @@
+{% for row in link %}
+	<br>{% for column, value in row.items %}
+		<br><strong>{{ column }}:</strong> {{ value }} </a>
+	{% endfor %}
+{% endfor %}
 
-
-foreign key = {{ fk }}
