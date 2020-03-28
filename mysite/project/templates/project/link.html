@@ -1,3 +1,11 @@
+{% if size_bytes %}
+	<strong>Request size is </strong>{{ size_bytes }} bytes
+{% elif size_kb %}
+	<strong>Request size is </strong>{{ size_kb }} KB
+{% elif size_mb %}
+	<strong>Request size is </strong>{{ size_mb }} MB
+{% endif %}
+
 {% for row in link %}
 	<br>{% for column, value in row.items %}
 		<br><strong>{{ column }}:</strong> {{ value }} </a>

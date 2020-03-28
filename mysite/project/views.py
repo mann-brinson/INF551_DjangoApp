@@ -198,6 +198,8 @@ def db_search(request, database, searchterm):
 
 
 def fk_link(request, database, searchterm, fk_value):
+    size_bytes=0
+
     url = get_url(database)
     fkeys, fk_pk = get_fkeys(database)
     pkeys=get_pkeys(database)
@@ -210,12 +212,14 @@ def fk_link(request, database, searchterm, fk_value):
     path = f'{url}/{match_table}.json?orderBy="{match_key}"&equalTo="{match_id}"'
     table_response = requests.get(path)
     res = json.loads(table_response.content)
-
+    size_bytes+=len(table_response.content)
     # add the matched rows to the match_rows list (list of dicts)
     match_rows=list()
     for val in res.values():
         match_rows.append(val)
 
     context = {'link': match_rows}
-
+    if size_bytes>0:
+        context.update({'size_bytes':size_bytes}) 
+          
     return render(request, 'project/link.html', context)
