@@ -60,7 +60,7 @@ def get_fkeys(db):
 def get_item(dictionary, key):
     return dictionary.get(key)
 
-def db_test(request, database, searchterm):
+def db_search(request, database, searchterm):
     #Initialize database metadata
     url = get_url(database)
     tables = get_tables(database)
