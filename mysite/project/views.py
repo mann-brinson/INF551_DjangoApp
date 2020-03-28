@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.contrib import auth
 from django.template import Context, RequestContext
+from django.template.defaulttags import register
 from . import db_specs # database specifications (table names, primary keys etc.)
 from .forms import SearchForm
 
@@ -10,9 +11,6 @@ import requests
 import json
 import ast # to convert dictionaries as strings back to dictionaries
 import re # regular expressions, to find whole words
-
-# Create your views here.
-
 
 
 def selectdb(request):
@@ -28,33 +26,45 @@ def selectdb(request):
 def default(request):
     return HttpResponse("Hello, world. You're at the project default.")
 
+@register.filter
+def get_item(dictionary, key):
+    return dictionary.get(key)
+
+def get_url(db):
+    url = db_specs.db_specs[db]['firebaseurl']
+    return url
+
+def get_tables(db):    
+    tables = list(db_specs.db_specs[db]['tables'].keys())
+    return tables
+
+def get_pkeys(db):
+    p_keys = []
+    tables=get_tables(db)
+    for table in tables:
+        p_keys.append(db_specs.db_specs[db]['tables'][table]['primarykeys'][0])
+    return p_keys
+
+def get_fkeys(db):
+    fk_pk = dict()    
+    tables=get_tables(db)
+    for table in tables:
+        fk_pk.update(db_specs.db_specs[db]['tables'][table]['fk_pk'])
+    fkeys=list()
+    for fkey in fk_pk:
+        fkeys.append(fkey)
+    return fkeys, fk_pk
+
+# to retrieve a dictionary value based on the key. Use {{ dict1|get_item:key1 }} in html file   
+@register.filter
+def get_item(dictionary, key):
+    return dictionary.get(key)
+
 def db_test(request, database, searchterm):
-
-    def get_url(db, db_specs):
-        url = db_specs.db_specs[db]['firebaseurl']
-        return url
-
-    def get_tables(db, db_specs):
-        tables = list(db_specs.db_specs[db]['tables'].keys())
-        return tables
-
-    def get_pkeys(db, tables, specs):
-        p_keys = []
-        for table in tables:
-            p_keys.append(db_specs.db_specs[db]['tables'][table]['primarykeys'][0])
-        return p_keys
-    
-    def get_fkeys(db, tables, specs):
-        f_keys = []
-        for table in tables:
-            f_keys.append(db_specs.db_specs[db]['tables'][table]['foreignkeys'][0])
-        return f_keys
-
     #Initialize database metadata
-    url = get_url(database, db_specs)
-    tables = get_tables(database, db_specs)
-    pkeys = get_pkeys(database, tables, db_specs)
-    fkeys = get_fkeys(database, tables, db_specs)
+    url = get_url(database)
+    tables = get_tables(database)
+    fkeys, fk_pk = get_fkeys(database)
 
     # parse the keywords from the input. Separate words are indicated with + in the url
     keywords = searchterm.lower().split('+')
@@ -175,16 +185,20 @@ def db_test(request, database, searchterm):
         return HttpResponse(f'{ordered_output} {keyword_failure_warning}')
     else:
         if size_bytes>0:
-            return render(request, 'project/results.html', {'results':ordered_output, 'database': database, 'searchterm': searchterm, 'foreign_keys':fkeys, 'size_bytes':size_bytes})
+            return render(request, 'project/results.html', {'results':ordered_output, 'database': database, 'searchterm': searchterm, 'foreign_keys':fkeys, 'fk_pk':fk_pk, 'size_bytes':size_bytes})
         if size_kb>0:
-            return render(request, 'project/results.html', {'results':ordered_output, 'database': database, 'searchterm': searchterm, 'foreign_keys':fkeys, 'size_kb':size_kb})
+            return render(request, 'project/results.html', {'results':ordered_output, 'database': database, 'searchterm': searchterm, 'foreign_keys':fkeys, 'fk_pk':fk_pk, 'size_kb':size_kb})
         if size_mb>0:
-            return render(request, 'project/results.html', {'results':ordered_output, 'database': database, 'searchterm': searchterm, 'foreign_keys':fkeys, 'size_mb':size_mb})
+            return render(request, 'project/results.html', {'results':ordered_output, 'database': database, 'searchterm': searchterm, 'foreign_keys':fkeys, 'fk_pk':fk_pk, 'size_mb':size_mb})
 
 
 
 
 def fk_link(request, database, searchterm, fk_value):
+
+    fkeys, fk_pk = get_fkeys(database)
+
+    fk, value=fk_value.split('&')
 
     context = {'fk': fk_value}
 

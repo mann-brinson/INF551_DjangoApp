@@ -25,8 +25,6 @@ urlpatterns = [
     #ex: /project/world/sweden
     path('<str:database>/<str:searchterm>/', views.db_test, name='searchterm'),
 
+    #ex: /project/world/sweden/1
     path('<str:database>/<str:searchterm>/<str:fk_value>/', views.fk_link, name='fk_value'),
-
-    #url(r'<str:database>/<str:searchterm>/<int:fk_link>/', views.fk_link, name='fk_link'),
-
 ]
