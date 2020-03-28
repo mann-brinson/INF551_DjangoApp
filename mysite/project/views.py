@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.contrib import auth
+from django.template import Context, RequestContext
 from . import db_specs # database specifications (table names, primary keys etc.)
 from .forms import SearchForm
 
@@ -11,6 +12,8 @@ import ast # to convert dictionaries as strings back to dictionaries
 import re # regular expressions, to find whole words
 
 # Create your views here.
+
+
 
 def selectdb(request):
     form = SearchForm(request.POST or None)
@@ -26,7 +29,6 @@ def default(request):
     return HttpResponse("Hello, world. You're at the project default.")
 
 def db_test(request, database, searchterm):
-    #return HttpResponse("You're looking at db: %s, and searchterm: %s" % (database, searchterm))
 
     def get_url(db, db_specs):
         url = db_specs.db_specs[db]['firebaseurl']
@@ -41,11 +43,18 @@ def db_test(request, database, searchterm):
         for table in tables:
             p_keys.append(db_specs.db_specs[db]['tables'][table]['primarykeys'][0])
         return p_keys
+    
+    def get_fkeys(db, tables, specs):
+        f_keys = []
+        for table in tables:
+            f_keys.append(db_specs.db_specs[db]['tables'][table]['foreignkeys'][0])
+        return f_keys
 
     #Initialize database metadata
     url = get_url(database, db_specs)
     tables = get_tables(database, db_specs)
     pkeys = get_pkeys(database, tables, db_specs)
+    fkeys = get_fkeys(database, tables, db_specs)
 
     # parse the keywords from the input. Separate words are indicated with + in the url
     keywords = searchterm.lower().split('+')
@@ -102,7 +111,7 @@ def db_test(request, database, searchterm):
             keyword_failure_warning.append("Not found in database: "+word)
             # catch error when there are multiple keywords, and they're all not in database: 
             if keywords.index(word)==len(keywords)-1 & keyword_failure==True:
-                return HttpResponse("Not found in database: %s" % (orig_searchterm_whole))
+                return HttpResponse(f'Not found in database: {orig_searchterm_whole}')
             # iterate over other keywords to see if they're valid
             else:
                 continue
@@ -155,7 +164,7 @@ def db_test(request, database, searchterm):
                         holding_list.append(output)
     # catch error when there is only one keyword, and it's not in the database
     except ValueError:
-        return HttpResponse("Not found in database: %s" % (orig_searchterm_whole))
+        return HttpResponse(f'Not found in database: {orig_searchterm_whole}')
 
     # clear out any remaining items in the holding list from the last iteration
     for held_item in holding_list:
@@ -163,11 +172,20 @@ def db_test(request, database, searchterm):
 
 
     if len(keyword_failure_warning)>0:
-        return HttpResponse("%s %s" % (ordered_output, keyword_failure_warning))
+        return HttpResponse(f'{ordered_output} {keyword_failure_warning}')
     else:
         if size_bytes>0:
-            return HttpResponse("%s Size of search request is %s bytes" % (ordered_output, size_bytes))
+            return render(request, 'project/results.html', {'results':ordered_output, 'database': database, 'searchterm': searchterm, 'foreign_keys':fkeys, 'size_bytes':size_bytes})
         if size_kb>0:
-            return HttpResponse("%s Size of search request is %s KB" % (ordered_output, size_kb))
+            return render(request, 'project/results.html', {'results':ordered_output, 'database': database, 'searchterm': searchterm, 'foreign_keys':fkeys, 'size_kb':size_kb})
         if size_mb>0:
-            return HttpResponse("%s Size of search request is %s MB" % (ordered_output, size_mb))
+            return render(request, 'project/results.html', {'results':ordered_output, 'database': database, 'searchterm': searchterm, 'foreign_keys':fkeys, 'size_mb':size_mb})
+
+
+
+
+def fk_link(request, database, searchterm, fk_value):
+
+    context = {'fk': fk_value}
+
+    return render(request, 'project/link.html', context)
