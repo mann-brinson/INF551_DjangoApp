@@ -1,4 +1,3 @@
-
 {% if size_bytes %}
 	<strong>Request size is </strong>{{ size_bytes }} bytes
 {% elif size_kb %}
@@ -6,7 +5,6 @@
 {% elif size_mb %}
 	<strong>Request size is </strong>{{ size_mb }} MB
 {% endif %}
-
 
 {% for row in results %}
 	<br>{% for column, value in row.items %}
@@ -17,6 +15,5 @@
 				{{ value }}
 			{% endif %}
 	{% endfor %}
+
 {% endfor %}
-
-
