@@ -31,9 +31,9 @@ def selectdb(request):
         fkeys, fk_pk = get_fkeys(form_db)
 
         # parse the keywords from the input. Separate words are indicated with + in the url
-        keywords = form_searchterm.lower().split('+')
-        orig_searchterm_whole="'"+form_searchterm.lower().replace('+',' ')+"'"
-        orig_searchterm_partial=form_searchterm.lower().replace('+',' ')
+        keywords = form_searchterm.lower().split(' ')
+        orig_searchterm_whole="'"+form_searchterm+"'"
+        orig_searchterm_partial=form_searchterm.lower()
 
         # create a list that holds rows of the tables (as dicts) that match on one or more keywords
         match_rows = list()  
