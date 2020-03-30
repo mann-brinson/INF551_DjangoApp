@@ -1,12 +1,26 @@
-{% block content %}
-
-
+<!-- Form used for collecting user search -->
 <form action='.' method='POST'>{% csrf_token %}
     {{ form.as_p }}
     <input type='submit' value='Search' />
 </form>
 
+<!-- Display the search payload - if available -->
+{% if size_bytes %}
+	<strong>Request size is </strong>{{ size_bytes }} bytes
+{% elif size_kb %}
+	<strong>Request size is </strong>{{ size_kb }} KB
+{% elif size_mb %}
+	<strong>Request size is </strong>{{ size_mb }} MB
+{% endif %}
 
-
-
-{% endblock %}
+<!-- Display the results, if available -->
+{% for row in results %}
+	<br>{% for column, value in row.items %}
+		<br><strong>{{ column }}:</strong>
+			{% if column in foreign_keys %}
+				<a href="http://127.0.0.1:8000/project/{{ database }}/{{ searchterm }}/{{ column }}&{{ value }}"> {{ value }} </a>
+			{% else %}
+				{{ value }}
+			{% endif %}
+	{% endfor %}
+{% endfor %}

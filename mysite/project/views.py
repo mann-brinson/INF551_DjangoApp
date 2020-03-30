@@ -14,14 +14,159 @@ import re # regular expressions, to find whole words
 
 
 def selectdb(request):
-    form = SearchForm(request.POST or None)
-    if form.is_valid():
-        form.save()
-        form = SearchForm()
-    context = {
-        'form': form
-    }
-    return render(request, "project/selectdb.html", context)
+    if request.method == 'POST': # If the form has been submitted...
+        form = SearchForm(request.POST or None) # A form bound to the POST data
+        if form.is_valid():
+            form.save()
+        form_data = request.POST.copy()
+        form_db = form_data['database']
+        form_searchterm = form_data['searchterm']
+        print(form_db)
+        context = {'form': form, 'form_db': form_db, 'form_searchterm': form_searchterm
+        }
+
+        #Initialize database metadata
+        url = get_url(form_db)
+        tables = get_tables(form_db)
+        fkeys, fk_pk = get_fkeys(form_db)
+
+        # parse the keywords from the input. Separate words are indicated with + in the url
+        keywords = form_searchterm.lower().split('+')
+        orig_searchterm_whole="'"+form_searchterm.lower().replace('+',' ')+"'"
+        orig_searchterm_partial=form_searchterm.lower().replace('+',' ')
+
+        # create a list that holds rows of the tables (as dicts) that match on one or more keywords
+        match_rows = list()  
+        # create error catching objects
+        keyword_failure=True
+        keyword_failure_warning=list()
+        # create object that holds the total size of the requests
+        size_bytes=0
+        size_kb=0
+        size_mb=0
+
+        for word in keywords:   
+            try:
+                # retrieve search results from the firebase index (multiple observations for each keyword)
+                search_response=requests.get(url+'/index/'+word+'.json')
+
+                # add the data communication overhead
+                size_bytes+=len(search_response.content)
+
+                # get search results in json format
+                index_matches=search_response.json() 
+
+                 # parse the search results
+                for match in index_matches:
+                    # assign the original table name
+                    match_table=match['table']
+                    # assign the original primary key
+                    match_key = db_specs.db_specs[form_db]['tables'][match_table]['primarykeys'][0]                
+                    match_id=match[match_key]
+
+                    # firebase request based on the table, primary key and the value
+                    path = f'{url}/{match_table}.json?orderBy="{match_key}"&equalTo="{match_id}"'
+
+                    table_response = requests.get(path)
+                    res = json.loads(table_response.content)
+        
+                    # add the matched rows to the match_rows list (list of dicts)
+                    for val in res.values():
+                        match_rows.append(val)
+
+                    # if successful
+                    keyword_failure=False
+
+                    # calculate the overhead for each of the requests
+                    size_bytes+=len(table_response.content)
+
+            except TypeError:
+                # create a warning if some of the keywords were not found (but don't abort)
+                keyword_failure_warning.append("Not found in database: "+word)
+                # catch error when there are multiple keywords, and they're all not in database: 
+                if keywords.index(word)==len(keywords)-1 & keyword_failure==True:
+                    return HttpResponse(f'Not found in database: {orig_searchterm_whole}')
+                # iterate over other keywords to see if they're valid
+                else:
+                    continue
+
+        if size_bytes>1000:
+            size_kb=round(size_bytes/1000,1)
+            size_bytes=0
+        if size_bytes>1000000:
+            size_mb=round(size_bytes/1000000,1)
+            size_bytes=0
+
+        # if there's a results that got added for multiple keywords, they'll occur twice in the output
+        # the following section counts how many of the same results there are, 
+        # and orders them by their frequency (highest first), and the how well the search terms match. 
+        # Since they output is in a list of dictionaries, 
+        # a few back and forth conversions are necessary (dict->str->dict) 
+        # only reorder the output if there is more than one entry and more than one keyword    
+        ordered_output=list()
+        count_output=dict()
+        for row in match_rows:
+            # iterate over the results, and count when they occur more than once 
+            # (meaning that they had a match with multiple keywords). This creates a dictionary 
+            # with the original dictionaries as keys (as a string representation) and the counter as the value
+            if str(row) not in count_output:
+                count_output[str(row)]=1
+            else:
+                count_output[str(row)]+=1
+        # then pick out the results that were found most often first 
+        # starting with the max nr of original keywords and counting backwards
+        # first, create a holding list for non-exact matches
+        holding_list=list()           
+        try:
+            for i in range(max(count_output.values()), 0, -1):
+                # these three lines are processing the output from the prior iteration
+                for held_item in holding_list:
+                    ordered_output.append(ast.literal_eval(held_item))
+                holding_list.clear()
+                for output, count in count_output.items():
+                    if count==i:                
+                        # prioritize exact matches in the values (e.g. 'United States' as the value)
+                        if orig_searchterm_whole in output.lower():
+                            # using ast.literal_eval to safely convert back to dict from string
+                            ordered_output.append(ast.literal_eval(output))
+                        # then use the holding_list, but add at the front if it's an exact match,
+                        # but not standalone (e.g. 'United States Minor Islands')
+                        elif orig_searchterm_partial in output.lower(): 
+                            holding_list.insert(0,output)
+                        # last priority is the partial match (e.g. United Kingdom)
+                        else:
+                            holding_list.append(output)
+        # catch error when there is only one keyword, and it's not in the database
+        except ValueError:
+            ##### THIS STILL NEEDS TO BE INTEGRATED INTO OUTPUT ###
+            return HttpResponse(f'Not found in database: {orig_searchterm_whole}')
+
+        # clear out any remaining items in the holding list from the last iteration
+        for held_item in holding_list:
+            ordered_output.append(ast.literal_eval(held_item))    
+
+        context.update({'results':ordered_output, 'foreign_keys':fkeys, 'fk_pk':fk_pk})
+
+        if len(keyword_failure_warning)>0:
+            ##### THIS STILL NEEDS TO BE INTEGRATED INTO OUTPUT ###
+            context.update({'warning': keyword_failure_warning})
+        else:
+            if size_bytes>0:
+                context.update({'size_bytes':size_bytes})           
+            if size_kb>0:
+                context.update({'size_kb':size_kb})
+            if size_mb>0:
+                context.update({'size_mb':size_mb})
+            return render(request, 'project/selectdb.html', context)
+
+    else: #Oherwise, just display the form itself
+        form = SearchForm(request.POST or None)
+        if form.is_valid():
+            form.save()
+        context = {
+            'form': form,
+        }
+        return render(request, "project/selectdb.html", context)
 
 def default(request):
     return HttpResponse("Hello, world. You're at the project default.")
