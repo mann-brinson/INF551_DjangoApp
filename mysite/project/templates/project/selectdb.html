@@ -18,7 +18,7 @@
 	<br>{% for column, value in row.items %}
 		<br><strong>{{ column }}:</strong>
 			{% if column in foreign_keys %}
-				<a href="http://127.0.0.1:8000/project/{{ database }}/{{ searchterm }}/{{ column }}&{{ value }}"> {{ value }} </a>
+				<a href="http://127.0.0.1:8000/project/{{ form_db }}/{{ form_searchterm }}/{{ column }}&{{ value }}"> {{ value }} </a>
 			{% else %}
 				{{ value }}
 			{% endif %}
