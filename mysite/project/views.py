@@ -21,7 +21,6 @@ def selectdb(request):
         form_data = request.POST.copy()
         form_db = form_data['database']
         form_searchterm = form_data['searchterm']
-        # print(form_db)
         context = {'form': form, 'form_db': form_db, 'form_searchterm': form_searchterm
         }
 
@@ -170,10 +169,6 @@ def selectdb(request):
 
 def default(request):
     return HttpResponse("Hello, world. You're at the project default.")
-
-@register.filter
-def get_item(dictionary, key):
-    return dictionary.get(key)
 
 def get_url(db):
     url = db_specs.db_specs[db]['firebaseurl']
