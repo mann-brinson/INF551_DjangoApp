@@ -16,12 +16,12 @@ import re # regular expressions, to find whole words
 def selectdb(request):
     if request.method == 'POST': # If the form has been submitted...
         form = SearchForm(request.POST or None) # A form bound to the POST data
-        if form.is_valid():
-            form.save()
+        # if form.is_valid():
+        #     form.save()
         form_data = request.POST.copy()
         form_db = form_data['database']
         form_searchterm = form_data['searchterm']
-        print(form_db)
+        # print(form_db)
         context = {'form': form, 'form_db': form_db, 'form_searchterm': form_searchterm
         }
 
