@@ -30,7 +30,7 @@
 			<div class="TableRow">
 				<div class="TableCellLeft"><strong>{{ column }}</strong></div>			
 				<div class="TableCellRight">{% if column in foreign_keys %}
-					<a href="http://127.0.0.1:8000/project/{{ form_db }}/{{ form_searchterm }}/{{ column }}&{{ value }}"> {{ value }} </a>
+					<a href="http://127.0.0.1:8000/project/{{ form_db }}&{{ form_searchterm }}&{{ column }}&{{ value }}"> {{ value }} </a>
 				{% else %}
 					{{ value }}
 				{% endif %}</div>
