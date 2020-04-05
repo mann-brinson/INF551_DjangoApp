@@ -1,10 +1,50 @@
+<html>
+<head>
+	<style>
+		body {font-family: "Arial", Helvetica, sans-serif;}
+
+		div.dbbox {margin-top: 70px; margin-bottom: 10px;}
+		div.reqsize {font-size: 90%; margin-top: 50px; text-align: center;}
+		
+		.Table {display: table; width:90%; font-size:85%;}
+		.TableRow {display: table-row;}
+		.TableCellLeft {display: table-cell; padding:3px 10px; width:150px;}
+		.TableCellRight {display: table-cell; padding:3px 10px;}
+		.EmptyTableCell {display: table-cell; height:20px; border-bottom: 1px solid #ddd;}
+
+	</style>
+</head>
+
+<body>
 <!-- Form used for collecting user search -->
-<form action='.' method='POST'>{% csrf_token %}
-    {{ form.as_p }}
+<div class=dbbox><center><strong><form action='.' method='POST'>{% csrf_token %} 
+    {{ form.as_p }} </strong> 
     <input type='submit' value='Search' />
-</form>
+</form></center></div>
+
+<!-- Display the results, if available -->
+<center><div class="Table">
+	{% for row in results %}	
+		<div class="TableRow"><div class="EmptyTableCell"></div><div class="EmptyTableCell"></div></div>
+		{% for column, value in row.items %}
+			<div class="TableRow">
+				<div class="TableCellLeft"><strong>{{ column }}</strong></div>			
+				<div class="TableCellRight">{% if column in foreign_keys %}
+					<a href="http://127.0.0.1:8000/project/{{ form_db }}/{{ form_searchterm }}/{{ column }}&{{ value }}"> {{ value }} </a>
+				{% else %}
+					{{ value }}
+				{% endif %}</div>
+			</div>
+	{% endfor %}
+{% endfor %}
+</div>
+</center>
+
+
 
 <!-- Display the search payload - if available -->
+<div class=reqsize>
+<p>
 {% if size_bytes %}
 	<strong>Request size is </strong>{{ size_bytes }} bytes
 {% elif size_kb %}
@@ -12,15 +52,7 @@
 {% elif size_mb %}
 	<strong>Request size is </strong>{{ size_mb }} MB
 {% endif %}
-
-<!-- Display the results, if available -->
-{% for row in results %}
-	<br>{% for column, value in row.items %}
-		<br><strong>{{ column }}:</strong>
-			{% if column in foreign_keys %}
-				<a href="http://127.0.0.1:8000/project/{{ form_db }}/{{ form_searchterm }}/{{ column }}&{{ value }}"> {{ value }} </a>
-			{% else %}
-				{{ value }}
-			{% endif %}
-	{% endfor %}
-{% endfor %}
+</p>
+</div>
+</body>
+</html>
