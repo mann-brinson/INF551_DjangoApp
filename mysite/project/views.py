@@ -2,7 +2,6 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.contrib import auth
 from django.template import Context, RequestContext
-from django.template.defaulttags import register
 from . import db_specs # database specifications (table names, primary keys etc.)
 from .forms import SearchForm
 
@@ -14,13 +13,13 @@ import re # regular expressions, to find whole words
 
 
 def selectdb(request):
-    if request.method == 'POST': # If the form has been submitted...
+    # If the form has been submitted...
+    if request.method == 'POST': 
         form = SearchForm(request.POST or None) # A form bound to the POST data
-        # if form.is_valid():
-        #     form.save()
         form_data = request.POST.copy()
         form_db = form_data['database']
         form_searchterm = form_data['searchterm']
+        # context gets passed to the html template
         context = {'form': form, 'form_db': form_db}
 
         #Initialize database metadata
@@ -33,13 +32,14 @@ def selectdb(request):
         orig_searchterm_whole="'"+form_searchterm+"'"
         orig_searchterm_partial=form_searchterm.lower()
         form_searchterm_for_link=form_searchterm.replace(" ","+")
+        # searchterm (with + between separate words) gets passed to html template - this is needed for url of click-trhough links
         context.update({'form_searchterm': form_searchterm_for_link})
         
         # create a list that holds rows of the tables (as dicts) that match on one or more keywords
         match_rows = list()  
-        # create error catching objects
-        keyword_failure=True
-        keyword_failure_warning=list()
+        # create error catching sets
+        word_success=list()
+        keyword_failure=list()
         # create object that holds the total size of the requests
         size_bytes=0
         size_kb=0
@@ -75,21 +75,22 @@ def selectdb(request):
                         match_rows.append(val)
 
                     # if successful
-                    keyword_failure=False
+                    word_success.append(word)
 
                     # calculate the overhead for each of the requests
                     size_bytes+=len(table_response.content)
 
             except TypeError:
-                # create a warning if some of the keywords were not found (but don't abort)
-                keyword_failure_warning.append("Not found in database: "+word)
-                # catch error when there are multiple keywords, and they're all not in database: 
-                if keywords.index(word)==len(keywords)-1 & keyword_failure==True:
-                    return HttpResponse(f'Not found in database: {orig_searchterm_whole}')
-                # iterate over other keywords to see if they're valid
-                else:
-                    continue
+                # catch error when none of the keywords are in the database, and render straight away 
+                if keywords.index(word)==len(keywords)-1 and len(word_success)==0:
+                    context.update({'none_found':orig_searchterm_whole})
+                    return render(request, 'project/selectdb.html', context)
 
+            # add words that were no match to the keyword_failure list for error reporting         
+            if word not in word_success:
+                keyword_failure.append(word)
+        
+        # convert bytes to KB or MB if larger than 1 thousand or 1 million
         if size_bytes>1000:
             size_kb=round(size_bytes/1000,1)
             size_bytes=0
@@ -100,7 +101,7 @@ def selectdb(request):
         # if there's a results that got added for multiple keywords, they'll occur twice in the output
         # the following section counts how many of the same results there are, 
         # and orders them by their frequency (highest first), and the how well the search terms match. 
-        # Since they output is in a list of dictionaries, 
+        # Since the output is in a list of dictionaries, 
         # a few back and forth conversions are necessary (dict->str->dict) 
         # only reorder the output if there is more than one entry and more than one keyword    
         ordered_output=list()
@@ -115,7 +116,7 @@ def selectdb(request):
                 count_output[str(row)]+=1
         # then pick out the results that were found most often first 
         # starting with the max nr of original keywords and counting backwards
-        # first, create a holding list for non-exact matches
+        # first, create a holding list for non-exact matches to be added after the exact matches
         holding_list=list()           
         try:
             for i in range(max(count_output.values()), 0, -1):
@@ -136,30 +137,37 @@ def selectdb(request):
                         # last priority is the partial match (e.g. United Kingdom)
                         else:
                             holding_list.append(output)
-        # catch error when there is only one keyword, and it's not in the database
+
+        # catch unlikely error where multiple keywords are all not found and they're the same (eg "blah blah")
         except ValueError:
-            ##### THIS STILL NEEDS TO BE INTEGRATED INTO OUTPUT ###
-            return HttpResponse(f'Not found in database: {orig_searchterm_whole}')
+            context.update({'none_found':orig_searchterm_whole})
+            return render(request, 'project/selectdb.html', context)
 
         # clear out any remaining items in the holding list from the last iteration
         for held_item in holding_list:
             ordered_output.append(ast.literal_eval(held_item))    
 
+        # add the output and keys to the context to display
         context.update({'results':ordered_output, 'foreign_keys':fkeys, 'fk_pk':fk_pk})
 
-        if len(keyword_failure_warning)>0:
-            ##### THIS STILL NEEDS TO BE INTEGRATED INTO OUTPUT ###
-            context.update({'warning': keyword_failure_warning})
-        else:
-            if size_bytes>0:
-                context.update({'size_bytes':size_bytes})           
-            if size_kb>0:
-                context.update({'size_kb':size_kb})
-            if size_mb>0:
-                context.update({'size_mb':size_mb})
-            return render(request, 'project/selectdb.html', context)
+        # if some of the keywords were not found, they'll be reported in addition to the output
+        if keyword_failure:
+            context.update({'some_not_found':keyword_failure})
+        
+        # also report on the size of the request
+        if size_bytes>0:
+            context.update({'size_bytes':size_bytes})           
+        if size_kb>0:
+            context.update({'size_kb':size_kb})
+        if size_mb>0:
+            context.update({'size_mb':size_mb})
 
-    else: #Oherwise, just display the form itself
+        # return everything and pass to html template
+        return render(request, 'project/selectdb.html', context)
+    
+
+    # otherwise (if forms has not been submitted), just display the form itself
+    else: 
         form = SearchForm(request.POST or None)
         if form.is_valid():
             form.save()
@@ -167,6 +175,7 @@ def selectdb(request):
             'form': form,
         }
         return render(request, "project/selectdb.html", context)
+
 
 
 def fk_link(request, link_search):
@@ -202,32 +211,30 @@ def fk_link(request, link_search):
 def default(request):
     return HttpResponse("Hello, world. You're at the project default.")
 
+
+# several functions to retrieve basic info about the databases (from db_specs file)
+# the firebase url where the data are stored
 def get_url(db):
     url = db_specs.db_specs[db]['firebaseurl']
     return url
-
+# name of the tables of the database
 def get_tables(db):    
     tables = list(db_specs.db_specs[db]['tables'].keys())
     return tables
-
+# primary keys of all of the tables
 def get_pkeys(db):
     p_keys = []
     tables=get_tables(db)
     for table in tables:
         p_keys.append(db_specs.db_specs[db]['tables'][table]['primarykeys'][0])
     return p_keys
-
+# foreign keys of all of the tables (fkeys), and a foreign key to primary key mapping (fk_pk)
 def get_fkeys(db):
-    fk_pk = dict()    
     tables=get_tables(db)
+    fk_pk = dict() 
     for table in tables:
         fk_pk.update(db_specs.db_specs[db]['tables'][table]['fk_pk'])
     fkeys=list()
     for fkey in fk_pk:
         fkeys.append(fkey)
     return fkeys, fk_pk
-
-# to retrieve a dictionary value based on the key. Use {{ dict1|get_item:key1 }} in html file   
-@register.filter
-def get_item(dictionary, key):
-    return dictionary.get(key)

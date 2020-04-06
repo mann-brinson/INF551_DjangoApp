@@ -1,10 +1,15 @@
 <html>
+
+<!-- CSS stylesheet -->
 <head>
 	<style>
 		body {font-family: "Arial", Helvetica, sans-serif;}
 
-		div.dbbox {margin-top: 70px; margin-bottom: 10px;}
+		div.dbbox {margin-top: 70px; margin-bottom: 10px; font-weight: bold;}
 		div.reqsize {font-size: 90%; margin-top: 50px; text-align: center;}
+		div.warning {font-size: 100%; margin-top: 50px; text-align: center; font-weight: bold;}
+
+		.redText {color: red;}
 		
 		.Table {display: table; width:90%; font-size:85%;}
 		.TableRow {display: table-row;}
@@ -15,12 +20,30 @@
 	</style>
 </head>
 
+
+<!-- HTML code -->
 <body>
+
 <!-- Form used for collecting user search -->
-<div class=dbbox><center><strong><form action='.' method='POST'>{% csrf_token %} 
-    {{ form.as_p }} </strong> 
+<div class=dbbox><center><form action='.' method='POST'>{% csrf_token %} 
+    {{ form.as_p }} 
     <input type='submit' value='Search' />
 </form></center></div>
+
+
+<!-- Display any error messages -->
+{% if none_found %}
+	<div class=warning>Not found in database: 
+		<span class="redText">{{ none_found }}</span></div>
+{% endif %}
+{% if some_not_found %}
+	<div class=warning>Not found in database: 
+	{% for word in some_not_found %}
+		<span class="redText">'{{ word }}'</span>	
+	{% endfor %}
+	</div>
+{% endif %}
+
 
 <!-- Display the results, if available -->
 <center><div class="Table">
@@ -44,7 +67,6 @@
 
 <!-- Display the search payload - if available -->
 <div class=reqsize>
-<p>
 {% if size_bytes %}
 	<strong>Request size is </strong>{{ size_bytes }} bytes
 {% elif size_kb %}
@@ -52,7 +74,6 @@
 {% elif size_mb %}
 	<strong>Request size is </strong>{{ size_mb }} MB
 {% endif %}
-</p>
 </div>
 </body>
 </html>
