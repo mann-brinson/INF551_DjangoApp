@@ -18,13 +18,13 @@ from google.auth.transport.requests import AuthorizedSession
 scopes = ["https://www.googleapis.com/auth/userinfo.email",
           "https://www.googleapis.com/auth/firebase.database"]
 
-# Authenticate a credential with the service account
-creds_file =os.path.join( settings.BASE_DIR, 'project/firebase_creds/world.json' )
-credentials = service_account.Credentials.from_service_account_file(
-    creds_file, scopes=scopes)
+# # Authenticate a credential with the service account
+# creds_file =os.path.join( settings.BASE_DIR, 'project/firebase_creds/world.json' )
+# credentials = service_account.Credentials.from_service_account_file(
+#     creds_file, scopes=scopes)
 
-# Use the credentials object to authenticate a Requests session.
-authed_session = AuthorizedSession(credentials)
+# # Use the credentials object to authenticate a Requests session.
+# authed_session = AuthorizedSession(credentials)
 
 def selectdb(request):
     # If the form has been submitted...
@@ -33,6 +33,23 @@ def selectdb(request):
         form_data = request.POST.copy()
         form_db = form_data['database']
         form_searchterm = form_data['searchterm']
+
+        # print('form_db: ', form_db)
+        # print('form_searchterm: ', form_searchterm)
+
+        # Authenticate a credential with the service account
+        if form_db == 'world':
+            creds_file =os.path.join( settings.BASE_DIR, 'project/firebase_creds/world.json' )
+        elif form_db == 'kickstarter':
+            creds_file =os.path.join( settings.BASE_DIR, 'project/firebase_creds/kickstarter.json' )
+        elif form_db == 'alumni':
+            creds_file =os.path.join( settings.BASE_DIR, 'project/firebase_creds/alumni.json' )
+        credentials = service_account.Credentials.from_service_account_file(
+            creds_file, scopes=scopes)
+
+        # Use the credentials object to authenticate a Requests session.
+        authed_session = AuthorizedSession(credentials)
+
         # context gets passed to the html template
         context = {'form': form, 'form_db': form_db}
 
