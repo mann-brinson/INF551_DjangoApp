@@ -6,8 +6,6 @@ from django.conf import settings #to load google_auth credentials
 from . import db_specs # database specifications (table names, primary keys etc.)
 from .forms import SearchForm
 
-#import pyrebase
-import requests
 import os #to load google_auth credentials
 import json
 import ast # to convert dictionaries as strings back to dictionaries
@@ -21,10 +19,7 @@ scopes = ["https://www.googleapis.com/auth/userinfo.email",
           "https://www.googleapis.com/auth/firebase.database"]
 
 # Authenticate a credential with the service account
-# service_account_info = json.load(open('/mysite/project/firebase_creds.json'))
-# credentials = service_account.Credentials.from_service_account_info(service_account_info)
-
-creds_file =os.path.join( settings.BASE_DIR, 'project/firebase_creds.json' )
+creds_file =os.path.join( settings.BASE_DIR, 'project/firebase_creds/world.json' )
 credentials = service_account.Credentials.from_service_account_file(
     creds_file, scopes=scopes)
 
