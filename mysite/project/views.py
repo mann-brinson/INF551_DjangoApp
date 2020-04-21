@@ -197,6 +197,7 @@ def fk_link(request, link_search):
     tables=get_tables(database)
     match_key=fk_pk[fkey]
     match_table=tables[pkeys.index(match_key)]
+
     # Authenticate a credential with the service account
     if database == 'world':
         creds_file =os.path.join( settings.BASE_DIR, 'project/firebase_creds/world.json' )
@@ -206,6 +207,7 @@ def fk_link(request, link_search):
         creds_file =os.path.join( settings.BASE_DIR, 'project/firebase_creds/alumni.json' )
     credentials = service_account.Credentials.from_service_account_file(
         creds_file, scopes=scopes)
+
     # Use the credentials object to authenticate a Requests session.
     authed_session = AuthorizedSession(credentials)
     # firebase request based on the table, primary key and the value
@@ -220,12 +222,10 @@ def fk_link(request, link_search):
     context = {'link': match_rows}
     if size_bytes>0:
         context.update({'size_bytes':size_bytes}) 
-    return render(request, 'project/selectdb.html', context)
-
+    return render(request, 'project/link.html', context)
 
 def default(request):
     return HttpResponse("Hello, world. You're at the project default.")
-
 
 # several functions to retrieve basic info about the databases (from db_specs file)
 # the firebase url where the data are stored
