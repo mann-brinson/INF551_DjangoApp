@@ -1,3 +1,54 @@
+<html>
+
+<!-- CSS stylesheet -->
+<head>
+	<style>
+		body {font-family: "Arial", Helvetica, sans-serif}
+		div.dbbox {margin-top: 70px; margin-bottom: 10px; font-weight: bold; text-align: center}
+		div.reqsize {font-size: 90%; margin-top: 50px; text-align: center}
+		div.warning {font-size: 100%; margin-top: 50px; text-align: center; font-weight: bold}
+		.redText {color: red}
+		.link_header {text-align: center; margin-top: 70px;  margin-bottom: 10px}
+		.Table {display: table; width:90%; font-size:85%}
+		.TableRow {display: table-row;}
+		.TableCellLeft {display: table-cell; padding:3px 10px; width:150px; text-align: left}
+		.TableCellRight {display: table-cell; padding:3px 10px; text-align: left}
+		.EmptyTableCell {display: table-cell; height:20px; border-bottom: 1px solid #ddd}
+	</style>
+</head>
+
+<!-- HTML code -->
+<body>
+
+<!-- Indicator of the database and prior searchterm + back button -->
+<div class="link_header">
+		<p><strong>Database:</strong> {{ database|title }} </p>
+		<p><strong>{{ current_fkey|title }}:</strong> {{ clicked_link }} </p>
+
+	<button type="button" onclick="history.back()">Back</button>
+</div>	
+
+
+<!-- Display the linked results -->
+<center><div class="Table">
+	{% for row in link %}	
+		<div class="TableRow"><div class="EmptyTableCell"></div><div class="EmptyTableCell"></div></div>
+		{% for column, value in row.items %}
+			<div class="TableRow">
+				<div class="TableCellLeft"><strong>{{ column }}</strong></div>			
+				<div class="TableCellRight">{% if column in foreign_keys and column != current_fkey %}
+					<a href="http://127.0.0.1:8000/project/{{ database }}&{{ column }}&{{ value }}"> {{ value }} </a>
+				{% else %}
+					{{ value }}
+				{% endif %}</div>
+			</div>
+	{% endfor %}
+{% endfor %}
+</div>
+</center>
+
+<!-- Display the search payload -->
+<div class=reqsize>
 {% if size_bytes %}
 	<strong>Request size is </strong>{{ size_bytes }} bytes
 {% elif size_kb %}
@@ -5,10 +56,8 @@
 {% elif size_mb %}
 	<strong>Request size is </strong>{{ size_mb }} MB
 {% endif %}
+</div>
 
-{% for row in link %}
-	<br>{% for column, value in row.items %}
-		<br><strong>{{ column }}:</strong> {{ value }} </a>
-	{% endfor %}
-{% endfor %}
+</body>
 
+</html>
