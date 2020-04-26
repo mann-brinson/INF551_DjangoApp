@@ -4,19 +4,16 @@
 <head>
 	<style>
 		body {font-family: "Arial", Helvetica, sans-serif;}
-
-		div.dbbox {margin-top: 70px; margin-bottom: 10px; font-weight: bold;}
-		div.reqsize {font-size: 90%; margin-top: 50px; text-align: center;}
-		div.warning {font-size: 100%; margin-top: 50px; text-align: center; font-weight: bold;}
-
-		.redText {color: red;}
-		
-		.Table {display: table; width:90%; font-size:85%;}
+		div.dbbox {margin-top: 70px; margin-bottom: 10px; font-weight: bold; text-align: center}
+		div.reqsize {font-size: 90%; margin-top: 50px; text-align: center}
+		div.warning {font-size: 100%; margin-top: 50px; text-align: center; font-weight: bold}
+		.redText {color: red}
+		.link_header {text-align: center; margin-top: 70px;  margin-bottom: 10px; font-weight: lighter}
+		.Table {display: table; width:90%; font-size:85%}
 		.TableRow {display: table-row;}
-		.TableCellLeft {display: table-cell; padding:3px 10px; width:150px; text-align: left;}
-		.TableCellRight {display: table-cell; padding:3px 10px; text-align: left;}
-		.EmptyTableCell {display: table-cell; height:20px; border-bottom: 1px solid #ddd;}
-
+		.TableCellLeft {display: table-cell; padding:3px 10px; width:150px; text-align: left}
+		.TableCellRight {display: table-cell; padding:3px 10px; text-align: left}
+		.EmptyTableCell {display: table-cell; height:20px; border-bottom: 1px solid #ddd}
 	</style>
 </head>
 
@@ -45,7 +42,7 @@
 {% endif %}
 
 
-<!-- Display the results, if available -->
+<!-- Display the results -->
 <center><div class="Table">
 	{% for row in results %}	
 		<div class="TableRow"><div class="EmptyTableCell"></div><div class="EmptyTableCell"></div></div>
@@ -63,15 +60,7 @@
 </div>
 </center>
 
-<!-- Display the results, if available -->
-{% for row in link %}
-	<br>{% for column, value in row.items %}
-		<br><strong>{{ column }}:</strong> {{ value }} </a>
-	{% endfor %}
-{% endfor %}
-
-
-<!-- Display the search payload - if available -->
+<!-- Display the search payload -->
 <div class=reqsize>
 {% if size_bytes %}
 	<strong>Request size is </strong>{{ size_bytes }} bytes
