@@ -19,7 +19,5 @@ from django.urls import include, path
 
 urlpatterns = [
 	path('project/', include('project.urls')),
-    # path('login/', auth_views.LoginView, name='login'),
-    # path('logout/', auth_views.LogoutView, name='logout'),
     path('admin/', admin.site.urls),
 ]
