@@ -19,7 +19,7 @@ scopes = ["https://www.googleapis.com/auth/userinfo.email",
           "https://www.googleapis.com/auth/firebase.database"]
 
 
-def selectdb(request):
+def search(request):
     # If the form has been submitted...
     if request.method == 'POST': 
         form = SearchForm(request.POST or None) # A form bound to the POST data
@@ -95,7 +95,7 @@ def selectdb(request):
                 # catch error when none of the keywords are in the database, and render straight away 
                 if keywords.index(word)==len(keywords)-1 and len(word_success)==0:
                     context.update({'none_found':orig_searchterm_whole})
-                    return render(request, 'project/selectdb.html', context)
+                    return render(request, 'project/search.html', context)
             # add words that were no match to the keyword_failure list for error reporting         
             if word not in word_success:
                 keyword_failure.append(word)
@@ -148,7 +148,7 @@ def selectdb(request):
         # catch unlikely error where multiple keywords are all not found and they're the same (eg "blah blah")
         except ValueError:
             context.update({'none_found':orig_searchterm_whole})
-            return render(request, 'project/selectdb.html', context)
+            return render(request, 'project/search.html', context)
         # clear out any remaining items in the holding list from the last iteration
         for held_item in holding_list:
             ordered_output.append(ast.literal_eval(held_item))    
@@ -165,7 +165,7 @@ def selectdb(request):
         if size_mb>0:
             context.update({'size_mb':size_mb})
         # return everything and pass to html template
-        return render(request, 'project/selectdb.html', context)
+        return render(request, 'project/search.html', context)
     # otherwise (if forms has not been submitted), just display the form itself
     else: 
         form = SearchForm(request.POST or None)
@@ -174,7 +174,7 @@ def selectdb(request):
         context = {
             'form': form,
         }
-        return render(request, "project/selectdb.html", context)
+        return render(request, "project/search.html", context)
 
 
 def fk_link(request, link_search):
